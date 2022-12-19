@@ -1,0 +1,25 @@
+Besprechung vom 21.11.2022:
+    - U-map anstatt TSNE                                -> DONE: did not improve overall model performance
+    - Benchmarks für Link-Prediction Task (MovieLens)   -> DONE: MovieLens100k RMSE: ~0.89 (without features)
+    - Rampasek Modell
+    - Start Arbeit für xAI                              -> DONE:
+    - SAGE model studieren
+    - Umbeddings für User                               -> DONE: Identical results, but faster processing!
+    - Encode Actor information                          -> DONE: One-Hot Encoding not feasable!
+
+Besprechung vom 29.11.2022
+	- Beispiel Report						-> DONE: einfaches Work (kein spezielles Template)
+	- Different Architectures				-> DONE: SAGE, vs. 3 GAT Models
+	- Prof Woo -> Github					-> Check if accepted
+	- Rampasek anschreiben					-> DONE: wait for response
+	- Actor & Director Embeddings			-> OPEN:
+
+
+Besprechung vom 12.12.2022
+    - Grid Search -> Hyperparameter tuning
+    - Report:
+        - Experimentelle Ergebnisse
+        - Parameter Settings
+    - Vortrag:
+        - 30 min 
+        - Ende Januar
