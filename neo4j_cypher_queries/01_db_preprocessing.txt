@@ -1,0 +1,52 @@
+MATCH (u:User)
+SET u.userId = toInteger(u.userId)
+;
+
+MATCH (m:Movie)
+SET m.movieId = toInteger(m.movieId)
+;
+
+MATCH (m:Movie)
+SET m.released = date(m.released)
+;
+
+MATCH (p:Person)
+SET p.born = date(p.born),
+    p.died = date(p.died)
+;
+
+MATCH (p:Person)
+SET p.tmdbId = toInteger(p.tmdbId)
+;
+
+MATCH () -[r:RATED]-> ()
+WHERE r.rating < 4.0
+SET r.ratingTs = datetime({epochSeconds: r.timestamp})
+;
+
+MATCH () -[r:RATED]-> ()
+WHERE r.rating >= 4.0
+SET r.ratingTs = datetime({epochSeconds: r.timestamp})
+;
+
+// create genre one-hot encodings
+match(g:Genre)
+with g order by g.name
+with collect(g) as genres
+match (m:Movie)
+set m.genreEmbedding = gds.alpha.ml.oneHotEncoding(genres, [(m)-[:IN_GENRE]->(g) | g])
+//return m.title as title, gds.alpha.ml.oneHotEncoding(genres, [(m)-[:IN_GENRE]->(g) | g]) as embedding
+//limit 10
+;
+
+// create like relationship
+match (u:User) -[r:RATED]-> (m:Movie)
+where r.rating <= 4.0
+merge (u) -[:LIKES]-> (m)
+;
+
+// create dislike relationship
+match (u:User) -[r:RATED]-> (m:Movie)
+where r.rating < 4.0
+merge (u) -[:DISLIKES]-> (m)
+;

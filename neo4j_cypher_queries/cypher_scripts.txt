@@ -1,0 +1,284 @@
+// -------------------------------------------------------------
+// Content based filtering
+// -------------------------------------------------------------
+
+
+// Find similar movies by common genres
+MATCH (m:Movie)-[:IN_GENRE]->(g:Genre)
+              <-[:IN_GENRE]-(rec:Movie)
+WHERE m.title = 'Inception'
+WITH rec, collect(g.name) AS genres, count(*) AS commonGenres
+RETURN rec.title, genres, commonGenres
+ORDER BY commonGenres DESC 
+LIMIT 5;
+
+
+// Find similar movies by common actors and directors
+match a=(m:Movie) 
+    <-[:DIRECTED|ACTED_IN]- (p:Person)
+    -[:DIRECTED|ACTED_IN]-> (rec:Movie)
+where m.title = 'Inception'
+with rec, collect(p.name) as actor_list, count(*) as common_actors
+return rec.title, actor_list, common_actors
+order by common_actors desc
+limit 3
+
+
+// Find movies with similar genres or similar actors
+match a=(m:Movie) 
+    <-[:DIRECTED|ACTED_IN]- (p:Person)
+    -[:DIRECTED|ACTED_IN]-> (rec:Movie)
+where m.title = 'Inception'
+with rec, collect(p.name) as actor_list, count(*) as common_actors
+return rec.title as title, 
+    actor_list as similarity_list, 
+    common_actors as num_of_commons
+order by common_actors desc
+limit 3
+union
+MATCH (m:Movie)-[:IN_GENRE]->(g:Genre)
+              <-[:IN_GENRE]-(rec:Movie)
+WHERE m.title = 'Inception'
+WITH rec, collect(g.name) AS genres, count(*) AS commonGenres
+RETURN rec.title as title,
+    genres as similarity_list, 
+    commonGenres as num_of_commons
+ORDER BY commonGenres DESC 
+LIMIT 3;
+
+
+// Content recommendation by overlapping genres
+MATCH (u:User {name: 'Cynthia Freeman'})-[r:RATED]->(m:Movie),
+      (m)-[:IN_GENRE]->(g:Genre)<-[:IN_GENRE]-(rec:Movie)
+WHERE NOT EXISTS{ (u)-[:RATED]->(rec) }
+WITH rec, g.name as genre, count(*) AS count
+WITH rec, collect([genre, count]) AS scoreComponents
+RETURN rec.title AS recommendation, rec.year AS year, scoreComponents,
+       reduce(s=0,x in scoreComponents | s+x[1]) AS score
+ORDER BY score DESC LIMIT 10
+
+
+// Find similar movies by common genres
+MATCH (m:Movie) WHERE m.title = 'Wizard of Oz, The'
+MATCH (m)-[:IN_GENRE]->(g:Genre)<-[:IN_GENRE]-(rec:Movie)
+
+WITH m, rec, count(*) AS gs
+
+OPTIONAL MATCH (m)<-[:ACTED_IN]-(a)-[:ACTED_IN]->(rec)
+WITH m, rec, gs, count(a) AS as
+
+OPTIONAL MATCH (m)<-[:DIRECTED]-(d)-[:DIRECTED]->(rec)
+WITH m, rec, gs, as, count(d) AS ds
+
+RETURN rec.title AS recommendation,
+       (5*gs)+(3*as)+(4*ds) AS score
+ORDER BY score DESC LIMIT 25
+
+
+// Jaccard Index
+WITH m,other, intersection, common,
+     [(m)-[:IN_GENRE]->(mg) | mg.name] AS set1,
+     [(other)-[:IN_GENRE]->(og) | og.name] AS set2
+
+WITH m,other,intersection, common, set1, set2,
+     set1+[x IN set2 WHERE NOT x IN set1] AS union
+
+RETURN m.title, other.title, common, set1,set2,
+       ((1.0*intersection)/size(union)) AS jaccard
+
+ORDER BY jaccard DESC LIMIT 10
+
+
+// Jaccard Index on Genre, Actors and Directors
+MATCH (m:Movie {title: 'Inception'})-[:IN_GENRE|ACTED_IN|DIRECTED]-
+                   (t)<-[:IN_GENRE|ACTED_IN|DIRECTED]-(other:Movie)
+WITH m, other, count(t) AS intersection, collect(t.name) AS common,
+     [(m)-[:IN_GENRE|ACTED_IN|DIRECTED]-(mt) | mt.name] AS set1,
+     [(other)-[:IN_GENRE|ACTED_IN|DIRECTED]-(ot) | ot.name] AS set2
+
+WITH m,other,intersection, common, set1, set2,
+     set1 + [x IN set2 WHERE NOT x IN set1] AS union
+
+RETURN m.title, other.title, common, set1,set2,
+       ((1.0*intersection)/size(union)) AS jaccard
+ORDER BY jaccard DESC LIMIT 25
+
+
+// -------------------------------------------------------------
+// Collaborative filterin
+// -------------------------------------------------------------
+
+
+// Users who rated/watched this movie also watched that other movie
+MATCH (m:Movie {title: 'Inception'})
+      <-[:RATED]- (u:User)
+      -[:RATED]->(rec:Movie)
+WITH rec, COUNT(*) AS usersWhoAlsoWatched
+ORDER BY usersWhoAlsoWatched DESC LIMIT 25
+RETURN rec.title AS recommendation, usersWhoAlsoWatched
+
+
+// The wisdom of crowds
+MATCH (u:User {name: 'Cynthia Freeman'})-[r1:RATED]->
+      (:Movie)<-[r2:RATED]-(peer:User)
+WHERE abs(r1.rating-r2.rating) < 2 // similarly rated
+WITH distinct u, peer
+MATCH (peer)-[r3:RATED]->(rec:Movie)
+WHERE r3.rating > 3
+  AND NOT EXISTS { (u)-[:RATED]->(rec) }
+WITH rec, count(*) as freq, avg(r3.rating) as rating
+RETURN rec.title, rec.year, rating, freq, rec.plot
+ORDER BY rating DESC, freq DESC
+LIMIT 25
+
+
+// The wisdom of crowds
+
+// compute mean rating
+MATCH (u:User {name: 'Andrew Freeman'})-[r:RATED]->(m:Movie)
+WITH u, avg(r.rating) AS mean
+
+// find genres with higher than average rating and their number of rated movies
+MATCH (u)-[r:RATED]->(m:Movie)
+       -[:IN_GENRE]->(g:Genre)
+WHERE r.rating > mean
+
+WITH u, g, count(*) AS score
+
+// find movies in those genres, that have not been watched yet
+MATCH (g)<-[:IN_GENRE]-(rec:Movie)
+WHERE NOT EXISTS { (u)-[:RATED]->(rec) }
+
+// order by sum of scores
+RETURN rec.title AS recommendation, rec.year AS year,
+       sum(score) AS sscore,
+       collect(DISTINCT g.name) AS genres
+ORDER BY sscore DESC LIMIT 10
+
+
+// Similarity based approaches
+// ---------------------------
+
+// Cosine Similarities based on common recommendations
+MATCH (u1:User {name: 'Cynthia Freeman'})
+    -[r1:RATED]-> (m:Movie)
+    <-[r2:RATED]- (u2:User)
+where u1 <> u2
+
+with u1, u2, 
+    count(m) as num_of_common_ratings, 
+    collect(r1.rating) as ratings_r1, 
+    collect(r2.rating) as ratings_r2
+where num_of_common_ratings > 10
+
+return u1.name as user_1, 
+    u2.name as user_2, 
+    num_of_common_ratings, 
+    //ratings_r1, 
+    //ratings_r2,
+    gds.similarity.cosine(ratings_r1, ratings_r2) as cosine
+order by cosine desc
+limit 10
+
+
+// Person similarity
+MATCH (p1:User {name: 'Cynthia Freeman'})-[x:RATED]->(movie)<-[x2:RATED]-(p2:User)
+WHERE p2 <> p1
+WITH p1, p2, collect(x.rating) AS p1Ratings, collect(x2.rating) AS p2Ratings
+WHERE size(p1Ratings) > 10
+RETURN p1.name AS from,
+       p2.name AS to,
+       gds.similarity.pearson(p1Ratings, p2Ratings) AS pearson,
+       gds.similarity.cosine(p1Ratings, p2Ratings) AS cosine
+ORDER BY pearson DESC
+
+
+// Neighborhood based approches
+// ----------------------------
+
+
+
+
+
+
+// --------------------------------------------
+// Update User nodes with average rating scores
+// --------------------------------------------
+MATCH (u:User) -[r:RATED]-> (m:Movie)
+WITH u, avg(r.rating) as avgRating, percentileCont(r.rating, 0.5) as medianRating
+SET u.avgRating = round(avgRating, 1),
+    u.medianRating = medianRating
+	
+
+// --------------------------------------------
+// Set node property "favoritGenres"
+// --------------------------------------------
+MATCH (u:User) -[r:RATED]-> (m:Movie) -[:IN_GENRE]-> (g:Genre)
+WHERE r.rating > u.avgRating
+//AND u.name = 'Cynthia Freeman'
+
+WITH u, g, collect(r.rating) as ratings, sum(r.rating) as score
+ORDER by score DESC
+
+WITH u, collect(g.name)[0..5] as genres
+//RETURN u.name, genres
+SET u.favoritGenres = genres
+
+
+
+// --------------------------------------------
+// Create relationship ":LIKES_GENRE"
+// --------------------------------------------
+MATCH (u:User) -[r:RATED]-> (m:Movie) -[:IN_GENRE]-> (g:Genre)
+WHERE r.rating > u.avgRating
+//AND u.name = 'Cynthia Freeman'
+
+WITH u, g, sum(r.rating) AS score
+ORDER BY score DESC
+CREATE (u) -[l:LIKES_GENRE]-> (g)
+SET l.score = score
+
+// Calc cumulative score per user
+MATCH (u:User) -[l:LIKES_GENRE]-> (g:Genre)
+WITH u, sum(l.score) AS cum_sum
+SET u.likesGenreSum = cum_sum
+
+// Normalize scores
+MATCH (u:User) -[l:LIKES_GENRE]-> (g:Genre)
+WITH u, g, l, l.score / u.likesGenreSum as norm_score
+SET l.scoreNorm = norm_score
+
+
+// --------------------------------------------
+// Create user features
+// --------------------------------------------
+match (u:User) -[r:RATED]-> (m:Movie) -[:IN_GENRE]-> (g:Genre)
+where r.rating > u.avgRating
+//and u.name = 'Cynthia Freeman'
+with u, g, sum(r.rating) as score
+with u, g, score, score / u.likesGenreSum as scoreNorm
+with u, collect(g.name) as genres, collect(scoreNorm) as scores
+with u, apoc.map.fromLists(genres, scores) as likesGenres
+Set u.adventure = coalesce(likesGenres['Adventure'], 0),
+    u.animation = coalesce(likesGenres['Animation'], 0),
+    u.children = coalesce(likesGenres['Children'], 0),
+    u.comedy = coalesce(likesGenres['Comedy'], 0),
+    u.fantasy = coalesce(likesGenres['Fantasy'], 0),
+    u.romance = coalesce(likesGenres['Romance'], 0),
+    u.drama = coalesce(likesGenres['Drama'], 0),
+    u.action = coalesce(likesGenres['Action'], 0),
+    u.crime = coalesce(likesGenres['Crime'], 0),
+    u.thriller = coalesce(likesGenres['Thriller'], 0),
+    u.horror = coalesce(likesGenres['Horror'], 0),
+    u.mystery = coalesce(likesGenres['Mystery'], 0),
+    u.sciFi = coalesce(likesGenres['Sci-Fi'], 0),
+    u.documentary = coalesce(likesGenres['Documentary'], 0),
+    u.imax = coalesce(likesGenres['IMAX'], 0),
+    u.war = coalesce(likesGenres['War'], 0),
+    u.musical = coalesce(likesGenres['Musical'], 0),
+    u.western = coalesce(likesGenres['Western'], 0),
+    u.filmNoir = coalesce(likesGenres['Film-Noir'], 0),
+    u.noGenresListed = coalesce(likesGenres['(no genres listed)'], 0)
+
+
+
