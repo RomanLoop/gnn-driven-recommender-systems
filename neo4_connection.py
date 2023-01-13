@@ -1,3 +1,3 @@
 USER = 'neo4j'
-PWD = 'piston-captures-trim'
-URL = 'bolt://44.202.11.34:7687'
+PWD = 'replenishment-winch-rattle'
+URL = 'bolt://18.206.150.175:7687'

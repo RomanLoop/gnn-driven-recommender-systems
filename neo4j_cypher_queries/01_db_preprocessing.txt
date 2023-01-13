@@ -39,14 +39,50 @@ set m.genreEmbedding = gds.alpha.ml.oneHotEncoding(genres, [(m)-[:IN_GENRE]->(g)
 //limit 10
 ;
 
-// create like relationship
-match (u:User) -[r:RATED]-> (m:Movie)
-where r.rating <= 4.0
-merge (u) -[:LIKES]-> (m)
+// Set popularity flag for Actors
+MATCH (a:Actor)
+SET a.is_popular_actor = 0
 ;
 
-// create dislike relationship
-match (u:User) -[r:RATED]-> (m:Movie)
-where r.rating < 4.0
-merge (u) -[:DISLIKES]-> (m)
+MATCH (u:User) -[r:RATED]-> (m:Movie) <-[:ACTED_IN]- (a:Actor)
+WHERE r.rating >=3.5
+WITH a, 
+    count(m) AS num_of_rated_movies
+ORDER BY num_of_rated_movies DESC
+LIMIT 100
+SET a.is_popular_actor = 1
+;
+
+// Set popularity flag for Directors
+MATCH (d:Director)
+SET d.is_popular_director = 0
+;
+
+MATCH (u:User) -[r:RATED]-> (m:Movie) <-[:DIRECTED]- (d:Director)
+WHERE r.rating >=3.5
+WITH d, 
+    count(m) AS num_of_rated_movies
+ORDER BY num_of_rated_movies DESC
+LIMIT 25
+SET d.is_popular_director = 1
+;
+
+// Set movie property about popular actors
+MATCH (m:Movie)
+SET m.num_popular_actors = 0
+;
+
+MATCH (m:Movie) <-[:ACTED_IN]- (a:Actor)
+WITH m, sum(a.is_popular_actor) AS num_popular_actors
+SET m.num_popular_actors = num_popular_actors
+;
+
+// Set movie property about popular directors
+MATCH (m:Movie)
+SET m.num_popular_directors = 0
+;
+
+MATCH (m:Movie) <-[:DIRECTED]- (d:Director)
+WITH m, sum(d.is_popular_director) AS num_popular_directors
+SET m.num_popular_directors = num_popular_directors
 ;

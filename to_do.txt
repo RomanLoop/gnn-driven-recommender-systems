@@ -23,3 +23,10 @@ Besprechung vom 12.12.2022
     - Vortrag:
         - 30 min 
         - Ende Januar
+
+
+Besprechung vom 19.12.2022
+    - Ursula und Gerhard einladen zum Vortrag ok
+    - Actor / Director encoding nur die top-100 populärsten Schauspieler berücksichtigen
+    - Grid Search für Hyperparameter
+    - Nächste Besprechung 29.01.2023

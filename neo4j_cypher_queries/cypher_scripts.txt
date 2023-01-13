@@ -133,6 +133,7 @@ LIMIT 25
 
 
 // The wisdom of crowds
+// ---------------------------
 
 // compute mean rating
 MATCH (u:User {name: 'Andrew Freeman'})-[r:RATED]->(m:Movie)
