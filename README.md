@@ -1,6 +1,6 @@
 # Specialication Project 2022/2023 - Graph Neural Networks driven Recommender Systems
 
-The goal of this project was to build a solid recommender system opon the MovieLens 100K dataset. The data has been taken from (Neo4J's sandbox project 'Recommendation')[https://sandbox.neo4j.com/]. The preprocessed data is stored in `./data`
+The goal of this project was to build a solid recommender system opon the MovieLens 100K dataset. The data has been taken from [Neo4J's sandbox project 'Recommendation'](https://sandbox.neo4j.com/). The preprocessed data is stored in `./data`
 
 <img src="files/MovieLensGraph.png" width="300" style="display=block; margin:auto"/>
 
