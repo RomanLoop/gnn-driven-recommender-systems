@@ -1,16 +1,17 @@
-# Specialication Project 2022/2023 - Graph Neural Networks driven Recommender Systems
+# Graph Neural Networks driven Recommender Systems
+## A Master Studies Specialication Project
 
 ### Introduction
 
-Recommender systems are the secret ingredient behind personalized online experiences and powerful decision-support tools in retail, entertainment, healthcare, finance, and other industries.
+Recommender systems are the secret ingredient behind personalized online experiences and powerful decision-support tools across various industries, including retail, entertainment, healthcare, and finance.
 
-Recommender systems work by understanding the preferences, previous decisions, and other characteristics of many people. For example, recommenders can predict the types of movies an individual will enjoy based on the movies they’ve previously watched.
+These systems work by understanding the preferences, past decisions, and characteristics of many people. For instance, a recommender can predict the types of movies an individual will enjoy based on the movies they’ve previously watched.
 
-The three key objects managed by recommender systems are users, items and user-item interactions. These objects are tightly connected with each other and influence each other via various relations. For this very reason, recommender systems can be most naturally modelled by means of graphs through which the complex and heterogeneous nature of the available amount of information and data can be captured. It is therefore not surprising that in recent years the integration of graphs into recommender systems has attracted considerable attention from researchers and practitioners.
+Recommender systems manage three key objects: users, items, and user-item interactions. These objects are interconnected and influence each other through various relations. Therefore, recommender systems can be effectively modeled using graphs, which capture the complex and heterogeneous nature of the available data. It's no surprise that in recent years, integrating graphs into recommender systems has gained significant attention from researchers and practitioners.
 
-In a graph, the nodes correspond to entities (users and items), and edges correspond to relations between entities. Entities and their attributes can be mapped into a graph to understand the mutual relations between them.
+In a graph, nodes represent entities (such as users and items), while edges represent the relationships between these entities. Mapping entities and their attributes into a graph helps in understanding their mutual relations.
 
-As a graph learning technique Graph Neural Networks (GNN) will be applied. GNNs have recently be-come very popular due to their ability to learn complex systems of relations or interactions arising in a broad spectrum of problems. They have proven to be among the best performing architectures for a variety of graph learning tasks. The key idea in GNNs is to learn how to iteratively aggregate feature information from local graph neighborhoods using neural networks. This aggregation step allows each node to learn a more general node representation from its local neighborhood.
+To leverage this structure, Graph Neural Networks (GNNs) will be applied. GNNs have recently become very popular due to their ability to learn complex relationships or interactions across various problems. They are among the best-performing architectures for graph learning tasks. The key idea in GNNs is to iteratively aggregate feature information from local graph neighborhoods using neural networks. This aggregation step allows each node to learn a more general representation from its local neighborhood.
 
 ### Project goals and scope
 
