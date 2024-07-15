@@ -1,5 +1,5 @@
 # Graph Neural Networks driven Recommender Systems
-## A Master Studies Specialication Project
+## A Master's Thesis Specialization Project
 
 ### Introduction
 
